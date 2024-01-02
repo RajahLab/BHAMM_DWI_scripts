@@ -3,7 +3,7 @@
 # Last updated (dd/mm/yyyy): 02/01/2024
 #
 # Description: This R script contains code that imports brain score data derived
-# from behavior PLS analyses (generated via pls_analysis.m), and then analyzes
+# from behavior PLS analyses (generated via bpls_analysis.m), and then analyzes
 # and visualizes the data. The filtered BHAMM Master database is also used.
 #
 # Inputs: 
