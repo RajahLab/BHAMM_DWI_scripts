@@ -4,7 +4,7 @@
 # Author: Rikki Lissaman
 # Last updated (dd/mm/yyyy): 02/01/2024
 #
-# Description: This Bash script provides an overview of the steps...
+# Description: This Bash script provides an overview of the steps conducted to extract ROI-specific measures of FA and MD.
 #
 # Inputs:
 # 	(1) JHU ICBM labels atlas.
