@@ -3,7 +3,7 @@
 These scripts were used in:
  
 <b>The transition from pre- to post-menopause increases vulnerability to age effects on episodic memory and white matter microstructure</b> -
-Rikki Lissaman<sup>a,b,c</sup>\*, Sricharana Rajagopal<sup>b,c</sup> , Julia Kearley<sup>b,d</sup>, Stamatoula Pasvanis<sup>b,c</sup>, and M. Natasha Rajah<sup>a,b,c,d</sup>\
+Rikki Lissaman<sup>a,b,c</sup>\*, Sricharana Rajagopal<sup>b,c</sup> , Julia Kearley<sup>b,d</sup>, Stamatoula Pasvanis<sup>b,c</sup>, and M. Natasha Rajah<sup>a,b,c,d</sup>
 
 \*First author
 
