@@ -2,7 +2,7 @@
 
 These scripts were used in:
  
-<b>The transition from pre- to post-menopause increases vulnerability to age effects on episodic memory and white matter microstructure</b> -
+<b>Menopause status and sex affect memory for spatial context information and white matter microstructure at midlife</b> -
 Rikki Lissaman<sup>a,b,c</sup>\*, Sricharana Rajagopal<sup>b,c</sup> , Julia Kearley<sup>b,d</sup>, Stamatoula Pasvanis<sup>b,c</sup>, and M. Natasha Rajah<sup>a,b,c,d</sup>
 
 \*First author
