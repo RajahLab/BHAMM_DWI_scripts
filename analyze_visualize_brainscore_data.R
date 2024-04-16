@@ -1,6 +1,6 @@
 # Name: analyze_visualize_brainscore_data.R
 # Author: Rikki Lissaman
-# Last updated (dd/mm/yyyy): 02/01/2024
+# Last updated (dd/mm/yyyy): 15/04/2024
 #
 # Description: This R script contains code that imports brain score data derived
 # from behavior PLS analyses (generated via bpls_analysis.m), and then analyzes
@@ -74,6 +74,15 @@ bhamm$brainscore_md <- md_brainscores_sex$X1
 # Create a new variable for accuracy, collapsing across easy and hard
 bhamm <- mutate(bhamm, cs_rate_combo = (cs_rate_easy + cs_rate_hard) / 2)
 
+# Standardize all variables
+bhamm <- bhamm %>%
+  mutate(cs_rate_combo = scale(cs_rate_combo, center = T, scale = T),
+         brainscore_fa = scale(brainscore_fa, center = T, scale = T),
+         brainscore_md = scale(brainscore_md, center = T, scale = T)) %>%
+  mutate(cs_rate_combo = as.numeric(cs_rate_combo),
+         brainscore_fa = as.numeric(brainscore_fa),
+         brainscore_md = as.numeric(brainscore_md))
+
 
 ## Menopause ----
 
@@ -91,6 +100,15 @@ meno$brainscore_md <- md_brainscores_meno$X1
 
 # Create a new variable for accuracy, collapsing across easy and hard
 meno <- mutate(meno, cs_rate_combo = (cs_rate_easy + cs_rate_hard) / 2)
+
+# Standardize all variables
+meno <- meno %>%
+  mutate(cs_rate_combo = scale(cs_rate_combo, center = T, scale = T),
+         brainscore_fa = scale(brainscore_fa, center = T, scale = T),
+         brainscore_md = scale(brainscore_md, center = T, scale = T)) %>%
+  mutate(cs_rate_combo = as.numeric(cs_rate_combo),
+         brainscore_fa = as.numeric(brainscore_fa),
+         brainscore_md = as.numeric(brainscore_md))
 
 
 # Analyze and Visualize Brain Score Data ----------------------------------
@@ -129,9 +147,8 @@ sex_brainFA_acc_fig <- bhamm %>%
         axis.text.y = element_text(family = "Arial", colour = "black", size = 11),
         axis.title.x = element_text(family = "Arial", face = "bold", colour = "black", size = 11),
         axis.title.y = element_text(family = "Arial", face = "bold", colour = "black", size = 11),
-        legend.text = element_text(family = "Arial", colour = "black", size = 11),
-        legend.title = element_blank(), 
-        legend.position = "top") +
+        strip.text.x = element_text(family = "Arial", face = "bold", colour = "black", size = 11),
+        legend.position = "none") +
   scale_x_continuous(name = "Retrieval Accuracy - Combined", limits = c(0, 1), 
                      oob = squish, breaks = seq(0, 1, by = .2), labels = seq(0, 1, by = .2)) +
   scale_y_continuous(name = "Brain Scores - FA") +
@@ -141,7 +158,7 @@ sex_brainFA_acc_fig <- bhamm %>%
 # Print figure
 sex_brainFA_acc_fig
 
-# Expor figure
+# Export figure
 ggsave("output-file.svg", sex_brainFA_acc_fig, width = 4, height = 4, dpi = 300)
 
 
@@ -187,9 +204,8 @@ meno_brainFA_acc_fig <- meno %>%
         axis.text.y = element_text(family = "Arial", colour = "black", size = 11),
         axis.title.x = element_text(family = "Arial", face = "bold", colour = "black", size = 11),
         axis.title.y = element_text(family = "Arial", face = "bold", colour = "black", size = 11),
-        legend.text = element_text(family = "Arial", colour = "black", size = 11),
-        legend.title = element_blank(), 
-        legend.position = "top") +
+        strip.text.x = element_text(family = "Arial", face = "bold", colour = "black", size = 11),
+        legend.position = "none") +
   scale_x_continuous(name = "Retrieval Accuracy - Combined", limits = c(0, 1), 
                      oob = squish, breaks = seq(0, 1, by = .2), labels = seq(0, 1, by = .2)) +
   scale_y_continuous(name = "Brain Scores - FA") +
@@ -222,7 +238,7 @@ meno_brainMD_acc_fig <- meno %>%
   scale_colour_manual(values = c("#EBD66B", "#698BAB"), labels = c("Pre-menopause", "Post-menopause")) +
   scale_fill_manual(values = c("#EBD66B", "#698BAB"), labels = c("Pre-menopause", "Post-menopause")) 
 
-# print
+# Print figure
 meno_brainMD_acc_fig
 
 # Export figure
