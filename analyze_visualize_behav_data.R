@@ -1,6 +1,6 @@
 # Name: analyze_visualize_behav_data.R
 # Author: Rikki Lissaman
-# Last updated (dd/mm/yyyy): 02/01/2024
+# Last updated (dd/mm/yyyy): 15/04/2024
 #
 # Description: This R script contains code that imports behavioral data prepared
 # by a previous script (prepare_behav_data.R), and then analyzes and visualizes
@@ -33,6 +33,7 @@ library(ggplot2) # version 3.3.6
 library(scales) # version 1.2.0
 library(svglite) # version 2.1.1
 library(MatchIt) # version 4.4.0
+library(BayesFactor) # version 0.9.12-4.7
 
 # Load Raincloud plots source code
 source("R_rainclouds.R") # downloaded from https://github.com/RainCloudPlots/RainCloudPlots
@@ -491,15 +492,19 @@ bhamm %>%
 
 # Generate a "long" dataset for sex - accuracy (correct source)
 sex_acc <- bhamm %>%
-  mutate(s2_age_std = scale(s2_age, center = TRUE, scale = TRUE)) %>%
-  mutate(s2_age_std = as.numeric(s2_age_std)) %>%
-  select(id, s2_age, s2_age_std, sex, cs_rate_easy, cs_rate_hard) %>%
-  pivot_longer(!c(id, s2_age, s2_age_std, sex), 
-               ames_to = "task", values_to = "cs_rate") %>%
+  mutate(s2_age_std = scale(s2_age, center = T, scale = T),
+         cs_rate_easy_std = scale(cs_rate_easy, center = T, scale = T),
+         cs_rate_hard_std = scale(cs_rate_hard, center = T, scale = T)) %>%
+  mutate(s2_age_std = as.numeric(s2_age_std),
+         cs_rate_easy_std = as.numeric(cs_rate_easy_std),
+         cs_rate_hard_std = as.numeric(cs_rate_hard_std)) %>%
+  select(id, s2_age, s2_age_std, sex, cs_rate_easy_std, cs_rate_hard_std) %>%
+  pivot_longer(!c(id, s2_age, s2_age_std, sex), names_to = "task", values_to = "cs_rate") %>%
   mutate(id = factor(id))
 
 # Remove unnecessary text in task variable
 sex_acc$task <- str_replace_all(sex_acc$task, "cs_rate_", "")
+sex_acc$task <- str_replace_all(sex_acc$task, "_std", "")
 
 # Convert task to factor with correct levels
 sex_acc <- mutate(sex_acc, task = factor(task, levels = c("easy","hard")))
@@ -512,9 +517,6 @@ contrasts(sex_acc$sex) <- contr.sum(2)
 # sex (male, female), and age (standardized) on correct source, and then generate a summary
 lmm_sex_acc <- lmerTest::lmer(cs_rate ~ task * sex * s2_age_std + (1|id), data = sex_acc)
 anova(lmm_sex_acc)
-
-# Examine estimated marginal means for easy and hard task performance, independent of sex and age
-emmeans(lmm_sex_acc, ~ task)
 
 # Examine significance of age trends for males and females
 emtrends(lmm_sex_acc, pairwise ~ "sex", var = "s2_age_std") %>% test()
@@ -536,8 +538,8 @@ sexAge_acc_fig <- ggplot(pred_sex_acc, aes(x = s2_age_std, y = cs_rate, colour =
         legend.text = element_text(family = "Arial", colour = "black", size = 11),
         legend.title = element_blank(), 
         legend.position = "top") +
-  scale_y_continuous(name = "Predicted Retrieval Accuracy", limits = c(0, 1), 
-                     oob = squish, breaks = seq(0, 1, by = .2), labels = seq(0, 1, by = .2)) +
+  scale_y_continuous(name = "Retrieval Accuracy (Standardized)", limits = c(-2, 2), 
+                     oob = squish, breaks = seq(-2, 2, by = .5), labels = seq(-2, 2, by = .5)) +
   scale_x_continuous(name = "Age (Standardized)") +
   scale_colour_manual(values = c("#0072B2", "#D55E00")) +
   scale_fill_manual(values = c("#0072B2", "#D55E00")) 
@@ -628,8 +630,8 @@ pls_acc_corrs_fig <- ggplot(pls_acc_corrs,
   scale_y_continuous(name = "Behavior-LV Correlations", limits = c(-1, 1),
                      breaks = seq(from = -1, to = 1, by = 0.2),
                      labels = c(seq(from = -1, to = 1, by = 0.2))) +
-  scale_colour_manual(values = c("#698BAB", "#8297A4", "#687983")) +
-  scale_fill_manual(values = c("#698BAB", "#8297A4", "#687983"))
+  scale_colour_manual(values = c("#698BAB", "#E0BBE4", "#957DAD")) +
+  scale_fill_manual(values = c("#698BAB", "#E0BBE4", "#957DAD"))
 
 # Print the figure
 pls_acc_corrs_fig
@@ -639,15 +641,20 @@ ggsave("output-file.svg", pls_acc_corrs_fig, width = 8, height = 4, dpi = 300)
 
 # Generate a "long" dataset for menopause.
 meno_acc <- meno %>%
-  mutate(s2_age_std = scale(s2_age, center = TRUE, scale = TRUE)) %>%
-  mutate(s2_age_std = as.numeric(s2_age_std)) %>%
-  select(id, sex, s2_age, s2_age_std, s2_meno_group, cs_rate_easy, cs_rate_hard) %>%
-  pivot_longer(!c(id, sex, s2_age, s2_age_std, s2_meno_group), 
-               names_to = "task", values_to = "cs_rate") %>%
+  filter(sex == "Female") %>%
+  mutate(s2_age_std = scale(s2_age, center = TRUE, scale = TRUE),
+         cs_rate_easy_std = scale(cs_rate_easy, center = TRUE, scale = TRUE),
+         cs_rate_hard_std = scale(cs_rate_hard, center = TRUE, scale = TRUE)) %>%
+  mutate(s2_age_std = as.numeric(s2_age_std),
+         cs_rate_easy_std = as.numeric(cs_rate_easy_std),
+         cs_rate_hard_std = as.numeric(cs_rate_hard_std)) %>%
+  select(id, sex, s2_age, s2_age_std, s2_meno_group, cs_rate_easy_std, cs_rate_hard_std) %>%
+  pivot_longer(!c(id, sex, s2_age, s2_age_std, s2_meno_group), names_to = "task", values_to = "cs_rate") %>%
   mutate(id = factor(id))
 
 # Remove unnecessary text from task variable
 meno_acc$task <- str_replace_all(meno_acc$task, "cs_rate_", "")
+meno_acc$task <- str_replace_all(meno_acc$task, "_std", "")
 
 # Convert task variable to factor
 meno_acc <- mutate(meno_acc, task = factor(task, levels = c("easy","hard")))
@@ -673,7 +680,7 @@ pred_pre_acc <- ggeffects::ggpredict(lmm_pre_acc, terms = c( "s2_age_std", "task
 # Plot the predictions for the pre-menopause model
 set.seed(123) # make reproducible
 preAge_acc_fig <- pred_pre_acc %>%
-ggplot(aes(x = s2_age_std, y = cs_rate, colour = task)) +
+  ggplot(aes(x = s2_age_std, y = cs_rate, colour = task)) +
   geom_line(aes(x = s2_age_std, y = cs_rate, colour = task)) +
   geom_ribbon(aes(ymin = conf.low, ymax = conf.high, fill = task), alpha = 0.6) +
   theme_bw() +
@@ -681,14 +688,16 @@ ggplot(aes(x = s2_age_std, y = cs_rate, colour = task)) +
         axis.text.y = element_text(family = "Arial", colour = "black", size = 11),
         axis.title.x = element_text(family = "Arial", face = "bold", colour = "black", size = 11),
         axis.title.y = element_text(family = "Arial", face = "bold", colour = "black", size = 11),
+        plot.title = element_text(family = "Arial", face = "bold", colour = "black", size = 14, hjust = 0.5),
         legend.text = element_text(family = "Arial", colour = "black", size = 11),
         legend.title = element_blank(), 
         legend.position = "top") +
-  scale_y_continuous(name = "Predicted Retrieval Accuracy", limits = c(0, 1), 
-                     oob = squish, breaks = seq(0, 1, by = .2), labels = seq(0, 1, by = .2)) +
-  scale_x_continuous(name = "Age (Standardized)", labels = c(-1.5, -1, -0.5, 0, 0.5), breaks = c(-1.5, -1, -0.5, 0, 0.5)) +
-  scale_colour_manual(values = c("#8297A4", "#687983"), labels = c("Easy", "Hard")) +
-  scale_fill_manual(values = c("#8297A4", "#687983"), labels = c("Easy", "Hard"))
+  scale_y_continuous(name = "Retrieval Accuracy (Standardized)", limits = c(-2, 2), 
+                     oob = squish, breaks = seq(-2, 2, by = .5), labels = seq(-2, 2, by = .5)) +
+  scale_x_continuous(name = "Age (Standardized)") +
+  ggtitle("Pre-menopause") +
+  scale_colour_manual(values = c("#E0BBE4", "#957DAD"), labels = c("Easy", "Hard")) +
+  scale_fill_manual(values = c("#E0BBE4", "#957DAD"), labels = c("Easy", "Hard"))
 
 # Print figure
 preAge_acc_fig
@@ -701,9 +710,6 @@ ggsave("output-file.svg", preAge_acc_fig, width = 4, height = 4, dpi = 300)
 lmm_post_acc <- lmerTest::lmer(cs_rate ~ task * s2_age_std + (1|id), data = post_acc)
 anova(lmm_post_acc)
 
-# Examine estimated marginal means for easy and hard task performance, independent of age
-emmeans(lmm_post_acc, ~ task)
-
 # Examine age trend
 emtrends(lmm_post_acc, ~ 1, var = "s2_age_std") %>% test()
 
@@ -714,7 +720,7 @@ pred_post_acc <- ggeffects::ggpredict(lmm_post_acc, terms = c( "s2_age_std", "ta
 # Plot the predictions for the post-menopause model
 set.seed(123) # make reproducible
 postAge_acc_fig <- pred_post_acc %>%
-ggplot(aes(x = s2_age_std, y = cs_rate, colour = task)) +
+  ggplot(aes(x = s2_age_std, y = cs_rate, colour = task)) +
   geom_line(aes(x = s2_age_std, y = cs_rate, colour = task)) +
   geom_ribbon(aes(ymin = conf.low, ymax = conf.high, fill = task), alpha = 0.6) +
   theme_bw() +
@@ -722,14 +728,16 @@ ggplot(aes(x = s2_age_std, y = cs_rate, colour = task)) +
         axis.text.y = element_text(family = "Arial", colour = "black", size = 11),
         axis.title.x = element_text(family = "Arial", face = "bold", colour = "black", size = 11),
         axis.title.y = element_text(family = "Arial", face = "bold", colour = "black", size = 11),
+        plot.title = element_text(family = "Arial", face = "bold", colour = "black", size = 14, hjust = 0.5),
         legend.text = element_text(family = "Arial", colour = "black", size = 11),
         legend.title = element_blank(), 
         legend.position = "top") +
-  scale_y_continuous(name = "Predicted Retrieval Accuracy", limits = c(0, 1), 
-                     oob = squish, breaks = seq(0, 1, by = .2), labels = seq(0, 1, by = .2)) +
-  scale_x_continuous(name = "Age (Standardized)", labels = c(-0.5, 0, 0.5, 1, 1.5), breaks = c(-0.5, 0, 0.5, 1, 1.5)) +
-  scale_colour_manual(values = c("#8297A4", "#687983"), labels = c("Easy", "Hard")) +
-  scale_fill_manual(values = c("#8297A4", "#687983"), labels = c("Easy", "Hard"))
+  scale_y_continuous(name = "Retrieval Accuracy (Standardized)", limits = c(-2, 2), 
+                     oob = squish, breaks = seq(-2, 2, by = .5), labels = seq(-2, 2, by = .5)) +
+  scale_x_continuous(name = "Age (Standardized)") +
+  ggtitle("Post-menopause") +
+  scale_colour_manual(values = c("#E0BBE4", "#957DAD"), labels = c("Easy", "Hard")) +
+  scale_fill_manual(values = c("#E0BBE4", "#957DAD"), labels = c("Easy", "Hard"))
 
 # Print figure 
 postAge_acc_fig
@@ -752,15 +760,19 @@ bhamm %>%
 
 # Generate a "long" dataset for sex
 sex_rt <- bhamm %>%
-  mutate(s2_age_std = scale(s2_age, center = TRUE, scale = TRUE)) %>%
-  mutate(s2_age_std = as.numeric(s2_age_std)) %>%
-  select(id, s2_age, s2_age_std, sex, rt_cs_easy, rt_cs_hard) %>%
-  pivot_longer(!c(id, s2_age, s2_age_std, sex), 
-               names_to = "task", values_to = "rt_cs") %>%
+  mutate(s2_age_std = scale(s2_age, center = T, scale = T),
+         rt_cs_easy_std = scale(rt_cs_easy, center = T, scale = T),
+         rt_cs_hard_std = scale(rt_cs_hard, center = T, scale = T)) %>%
+  mutate(s2_age_std = as.numeric(s2_age_std),
+         rt_cs_easy_std = as.numeric(rt_cs_easy_std),
+         rt_cs_hard_std = as.numeric(rt_cs_hard_std)) %>%
+  select(id, s2_age, s2_age_std, sex, rt_cs_easy_std, rt_cs_hard_std) %>%
+  pivot_longer(!c(id, s2_age, s2_age_std, sex), names_to = "task", values_to = "rt_cs") %>%
   mutate(id = factor(id))
 
 # Remove unnecessary text from task variable
 sex_rt$task <- str_replace_all(sex_rt$task, "rt_cs_", "")
+sex_rt$task <- str_replace_all(sex_rt$task, "_std", "")
 
 # Convert task variable to factor
 sex_rt <- mutate(sex_rt, task = factor(task, levels = c("easy","hard")))
@@ -773,9 +785,6 @@ contrasts(sex_rt$sex) <- contr.sum(2)
 # sex (male, femmale), and age (standardized) on correct source RTs, and then generate a summary
 lmm_sex_rt <- lmerTest::lmer(rt_cs ~ task * sex * s2_age_std + (1|id), data = sex_rt)
 anova(lmm_sex_rt)
-
-# Examine estimated marginal means for easy and hard task performance, independent of sex and age
-emmeans(lmm_sex_rt, ~ task)
 
 # Examine significcane of age trends for sex
 emtrends(lmm_sex_rt, pairwise ~ "sex", var = "s2_age_std") %>% test()
@@ -792,15 +801,19 @@ meno %>%
 
 # Generate a "long" dataset for menopause
 meno_rt <- meno %>%
-  mutate(s2_age_std = scale(s2_age, center = TRUE, scale = TRUE)) %>%
-  mutate(s2_age_std = as.numeric(s2_age_std)) %>%
-  select(id, sex, s2_age, s2_age_std, s2_meno_group, rt_cs_easy, rt_cs_hard) %>%
-  pivot_longer(!c(id, sex, s2_age, s2_age_std, s2_meno_group), 
-               names_to = "task", values_to = "rt_cs") %>%
+  mutate(s2_age_std = scale(s2_age, center = T, scale = T),
+         rt_cs_easy_std = scale(rt_cs_easy, center = T, scale = T),
+         rt_cs_hard_std = scale(rt_cs_hard, center = T, scale = T)) %>%
+  mutate(s2_age_std = as.numeric(s2_age_std),
+         rt_cs_easy_std = as.numeric(rt_cs_easy_std),
+         rt_cs_hard_std = as.numeric(rt_cs_hard_std)) %>%
+  select(id, sex, s2_age, s2_age_std, s2_meno_group, rt_cs_easy_std, rt_cs_hard_std) %>%
+  pivot_longer(!c(id, sex, s2_age, s2_age_std, s2_meno_group), names_to = "task", values_to = "rt_cs") %>%
   mutate(id = factor(id))
 
 # Remove unnecessary text from task variable
 meno_rt$task <- str_replace_all(meno_rt$task, "rt_cs_", "")
+meno_rt$task <- str_replace_all(meno_rt$task, "_std", "")
 
 # Convert task variable to factor
 meno_rt <- mutate(meno_rt, task = factor(task, levels = c("easy","hard")))
@@ -824,9 +837,6 @@ anova(lmm_pre_rt)
 lmm_post_rt <- lmerTest::lmer(rt_cs ~ task * s2_age_std + (1|id), data = post_rt)
 anova(lmm_post_rt)
 
-# Examine estimated marginal means for easy and hard task performance, independent of sex and age
-emmeans(lmm_post_rt, ~ task)
-
 
 # Supplementary Analyses --------------------------------------------------
 
@@ -840,10 +850,10 @@ supp_data <- bhamm %>%
   mutate(sex = factor(sex))
 
 set.seed(123) # make reproducible
-supp_data_match <- matchit(sex ~ s2_age, data = supp_data, method = "optimal")
+supp_data_match <- matchit(sex ~ s2_age + edu, data = supp_data, method = "optimal")
 supp_data_matched <- match.data(supp_data_match) 
 
-# For readability, re-convert sex to named variable.
+# For readability, re-convert sex to named variable
 supp_data_matched <- supp_data_matched %>%
   mutate(sex = case_when(
     sex == 1 ~ "Female",
@@ -852,7 +862,7 @@ supp_data_matched <- supp_data_matched %>%
 
 # Count the number of males and females, separating out the latter by menopause status
 supp_data_matched %>% 
-  count(sex, s2_meno_group) # males (n = 30), females (n = 30; 10 pre, 20 post)
+  count(sex, s2_meno_group) # males (n = 30), females (n = 30; 8 pre, 22 post)
 
 # Change contrasts for sex
 contrasts(supp_data_matched$sex) <- contr.sum(2)
@@ -879,6 +889,10 @@ t.test(s2_age ~ sex, data = supp_data_matched)
 # Calculate cohen's d for sex differences in age
 cohens_d(s2_age ~ sex, data = supp_data_matched)
 
+# Run a two-sides JZS Bayes Factor (BF) test for sex differences in age
+ttestBF(formula = s2_age ~ sex, data = supp_data_matched)
+
+
 ### Education (Years) ###
 
 # Convert years of education to integer
@@ -898,6 +912,9 @@ t.test(edu ~ sex, data = supp_data_matched)
 # Calculate cohen's d for sex differences in education
 cohens_d(edu ~ sex, data = supp_data_matched)
 
+# Run a two-sides JZS Bayes Factor (BF) test for sex differences in education
+ttestBF(formula = edu ~ sex, data = supp_data_matched)
+
 
 ## Accuracy ----
 
@@ -911,15 +928,19 @@ supp_data_matched %>%
 
 # Generate a "long" dataset for sex - accuracy (correct source)
 supp_acc <- supp_data_matched %>%
-  mutate(s2_age_std = scale(s2_age, center = TRUE, scale = TRUE)) %>%
-  mutate(s2_age_std = as.numeric(s2_age_std)) %>%
-  select(id, s2_age, s2_age_std, sex, cs_rate_easy, cs_rate_hard) %>%
-  pivot_longer(!c(id, s2_age, s2_age_std, sex), 
-               names_to = "task", values_to = "cs_rate") %>%
+  mutate(s2_age_std = scale(s2_age, center = T, scale = T),
+         cs_rate_easy_std = scale(cs_rate_easy, center = T, scale = T),
+         cs_rate_hard_std = scale(cs_rate_hard, center = T, scale = T)) %>%
+  mutate(s2_age_std = as.numeric(s2_age_std),
+         cs_rate_easy_std = as.numeric(cs_rate_easy_std),
+         cs_rate_hard_std = as.numeric(cs_rate_hard_std)) %>%
+  select(id, s2_age, s2_age_std, sex, cs_rate_easy_std, cs_rate_hard_std) %>%
+  pivot_longer(!c(id, s2_age, s2_age_std, sex), names_to = "task", values_to = "cs_rate") %>%
   mutate(id = factor(id))
 
 # Remove unnecessary text in task variable
 supp_acc$task <- str_replace_all(supp_acc$task, "cs_rate_", "")
+supp_acc$task <- str_replace_all(supp_acc$task, "_std", "")
 
 # Convert task to factor with correct levels
 supp_acc <- mutate(supp_acc, task = factor(task, levels = c("easy","hard")))
@@ -952,15 +973,19 @@ supp_data_matched %>%
 
 # Generate a "long" dataset for sex - RTs (correct source)
 supp_rt <- supp_data_matched %>%
-  mutate(s2_age_std = scale(s2_age, center = TRUE, scale = TRUE)) %>%
-  mutate(s2_age_std = as.numeric(s2_age_std)) %>%
-  select(id, s2_age, s2_age_std, sex, rt_cs_easy, rt_cs_hard) %>%
-  pivot_longer(!c(id, s2_age, s2_age_std, sex), 
-               names_to = "task", values_to = "rt_cs") %>%
+  mutate(s2_age_std = scale(s2_age, center = T, scale = T),
+         rt_cs_easy_std = scale(rt_cs_easy, center = T, scale = T),
+         rt_cs_hard_std = scale(rt_cs_hard, center = T, scale = T)) %>%
+  mutate(s2_age_std = as.numeric(s2_age_std),
+         rt_cs_easy_std = as.numeric(rt_cs_easy_std),
+         rt_cs_hard_std = as.numeric(rt_cs_hard_std)) %>%
+  select(id, s2_age, s2_age_std, sex, rt_cs_easy_std, rt_cs_hard_std) %>%
+  pivot_longer(!c(id, s2_age, s2_age_std, sex), names_to = "task", values_to = "rt_cs") %>%
   mutate(id = factor(id))
 
 # Remove unnecessary text from task variable
 supp_rt$task <- str_replace_all(supp_rt$task, "rt_cs_", "")
+supp_rt$task <- str_replace_all(supp_rt$task, "_std", "")
 
 # Convert task to factor
 supp_rt <- mutate(supp_rt, task = factor(task, levels = c("easy","hard")))
@@ -974,5 +999,5 @@ contrasts(supp_rt$sex) <- contr.sum(2)
 lmm_supp_rt <- lmerTest::lmer(rt_cs ~ task * sex * s2_age_std + (1|id), data = supp_rt)
 anova(lmm_supp_rt)
 
-# Examine estimated marginal means for easy and hard task performance, independent of sex and age
-emmeans(lmm_supp_rt, ~ task)
+# Examine significance of age trends for males and females.
+emtrends(lmm_supp_rt, pairwise ~ "sex", var = "s2_age_std") %>% test()
