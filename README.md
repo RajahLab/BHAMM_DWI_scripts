@@ -3,14 +3,14 @@
 These scripts were used in:
  
 <b>Menopause status and sex affect memory for spatial context information and white matter microstructure at midlife</b> -
-Rikki Lissaman<sup>a,b,c</sup>\*, Sricharana Rajagopal<sup>b,c</sup> , Julia Kearley<sup>b,d</sup>, Stamatoula Pasvanis<sup>b,c</sup>, and M. Natasha Rajah<sup>a,b,c,d</sup>
+Rikki Lissaman<sup>a</sup>\*, Sricharana Rajagopal<sup>b</sup> , Julia Kearley<sup>c</sup>, Stamatoula Pasvanis<sup>b</sup>, and M. Natasha Rajah<sup>a,d</sup>
 
 \*First author
 
 <sup>a</sup>Department of Psychiatry, McGill University, Montreal, QC, Canada <br>
 <sup>b</sup>Douglas Research Centre, Montreal, QC, Canada <br>
-<sup>c</sup>Department of Psychology, Toronto Metropolitan University, Toronto, ON, Canada <br>
-<sup>d</sup>Department of Psychology, McGill University, Montreal, QC, Canada <br>
+<sup>c</sup>Department of Psychology, McGill University, Montreal, QC, Canada <br>
+<sup>d</sup>Department of Psychology, Toronto Metropolitan University, Toronto, ON, Canada <br>
 
 
 Script descriptions:
