@@ -4,7 +4,7 @@ These scripts were used in:
  
 <b>Menopause status- and sex-related differences in age associations with spatial context memory and white matter microstructure at midlife</b> -
 Rikki Lissaman<sup>a</sup>\*, Sricharana Rajagopal<sup>b</sup> , Julia Kearley<sup>c</sup>, Stamatoula Pasvanis<sup>b</sup>, and M. Natasha Rajah<sup>a,d</sup>
-DOI: https://doi.org/10.1016/j.neurobiolaging.2024.05.017
+https://doi.org/10.1016/j.neurobiolaging.2024.05.017
 
 \*First author
 
